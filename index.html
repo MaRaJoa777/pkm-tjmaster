@@ -14,10 +14,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        html {
+            min-height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
             font-family: 'Jua', sans-serif;
             user-select: none;
-            overflow: hidden;
+            min-height: 100vh;
+            min-height: 100dvh;
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: auto;
+        }
+
+        /* 모바일 주소창/화면 높이 변화에도 문서가 세로로 스크롤되도록 합니다. */
+        #start-screen,
+        #gameover-screen {
+            flex-shrink: 0;
+        }
+
+        #game-screen {
+            min-height: 0;
         }
 
         /* 귀여운 구름 배경 애니메이션 */
@@ -87,7 +110,7 @@
         }
     </style>
 </head>
-<body class="bg-sky-200 w-screen h-screen flex flex-col justify-between relative overflow-hidden">
+<body class="bg-sky-200 min-h-screen flex flex-col justify-start relative overflow-x-hidden">
 
     <!-- 배경 구름 및 장식 -->
     <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
