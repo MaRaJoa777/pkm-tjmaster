@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#74d0ff"><title>포켓몬 타자 마스터</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{font-family:Jua,sans-serif;margin:0;min-height:100dvh;background:linear-gradient(#72d1ff 0 66%,#b5e9ff 66% 75%,#7fc65b 75%);color:#172033}button,input{font:inherit}button{touch-action:manipulation}.panel{background:#ffffffed;border:2px solid #d6e7f4;border-radius:20px;box-shadow:0 8px 24px #17405a26}.btn{border:2px solid #b77905;background:#ffcf32;color:#513700;border-radius:14px;padding:12px 18px;box-shadow:0 4px 0 #a66d00}.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #a66d00}.hidden{display:none!important}#game{height:100dvh;min-height:480px;display:flex;flex-direction:column}#drop-zone{position:relative;overflow:hidden;flex:1;min-height:0}#words{position:absolute;inset:0;pointer-events:none}.word{position:absolute;transform:translateX(-50%);padding:6px 13px;border:3px solid #fff;border-radius:999px;background:#ffe16b;box-shadow:0 4px 10px #0002;white-space:nowrap;font-size:clamp(18px,3vw,25px)}#danger{position:absolute;bottom:28px;left:0;width:100%;border-top:4px dashed #e34b4b}#typing{padding:10px;background:#238345;border-top:4px solid #176a35;padding-bottom:max(10px,env(safe-area-inset-bottom))}#word-input{min-width:0;width:100%;font-size:clamp(18px,4vw,25px);padding:12px;border:3px solid #ffcf32;border-radius:12px;outline:none;user-select:text}#name-input{user-select:text}#ranking{max-height:260px;overflow:auto}.shake{animation:shake .25s}@keyframes shake{25%,75%{transform:translateX(-4px)}50%{transform:translateX(4px)}}.sky-card{background:#effaff;border:1px solid #c5dce9;border-radius:12px;padding:8px 10px}.small{font-size:13px}.status{font-size:12px;padding:3px 8px;border-radius:99px;background:#e2e8f0;color:#334155}.status.ok{background:#dcfce7;color:#166534}.status.warn{background:#fef3c7;color:#92400e}@media(max-width:600px){.panel{border-radius:16px}.start-card{padding:18px!important}.hud{gap:6px!important;padding:8px!important}.hud .sky-card{padding:5px 7px}.lives{font-size:15px!important}#ranking{max-height:180px}#danger span{font-size:11px}#gameover-card{max-height:92dvh;overflow:auto}.btn{padding:10px 12px}}@media(max-height:650px){.start-card{padding:14px!important}.start-title{margin:4px 0!important}.badge-row{margin:8px 0!important}.ranking-preview{padding:8px!important}#gameover-card{padding:14px!important}}
+</style>
+</head>
+<body>
+<section id="start" class="min-h-dvh flex items-center justify-center p-4">
+ <div class="panel start-card w-full max-w-md p-7 text-center">
+  <div class="text-6xl -mt-2">🔴</div><div class="start-title my-4"><div class="text-sm text-amber-700">신나는 한글 자판 모험!</div><h1 class="text-4xl text-slate-800 mt-1">포켓몬 타자 마스터</h1><p class="text-slate-600 text-sm mt-2">바닥에 닿기 전에 포켓몬 이름을 입력해 잡으세요!</p></div>
+  <div class="badge-row flex justify-center flex-wrap gap-2 my-5 text-sm"><span class="bg-yellow-200 rounded-full px-3 py-1">⚡ 피카츄</span><span class="bg-red-200 rounded-full px-3 py-1">🔥 파이리</span><span class="bg-sky-200 rounded-full px-3 py-1">💧 꼬부기</span><span class="bg-green-200 rounded-full px-3 py-1">🌿 이상해씨</span></div>
+  <label for="name-input" class="block mb-2 text-lg">🧢 트레이너 이름</label><input id="name-input" maxlength="20" autocomplete="nickname" class="w-full border-2 border-sky-300 rounded-xl p-3 text-center text-xl" placeholder="예: 하준">
+  <p id="name-error" class="hidden text-red-600 text-sm mt-2">이름을 입력해 주세요.</p><button id="start-btn" class="btn w-full text-xl mt-4">모험 시작하기! ▶</button>
+  <div class="ranking-preview mt-5 bg-slate-50 border rounded-xl p-3 text-left"><div class="text-center mb-2">🏆 명예의 전당 TOP 3</div><div id="top3" class="space-y-1"></div></div>
+  <div class="mt-3 flex items-center justify-center gap-2"><span id="cloud-status" class="status">랭킹 연결 확인 중</span><button id="refresh" class="text-sm underline text-slate-600">새로고침</button></div>
+  <p class="small text-slate-500 mt-2">기기 간 랭킹 공유는 README의 Supabase 설정이 필요합니다.</p>
+ </div>
+</section>
+<section id="game" class="hidden">
+ <header class="hud flex flex-wrap items-center justify-between gap-3 bg-white/90 border-b-4 border-yellow-400 p-3 z-10">
+  <div class="sky-card"><div class="small text-slate-500">트레이너</div><strong id="hud-name">-</strong></div>
+  <div class="flex gap-2"><div class="sky-card text-center"><div class="small">점수</div><strong id="score">0</strong>점</div><div class="sky-card text-center"><div class="small">레벨</div><strong id="level">Lv.1</strong></div></div>
+  <div class="sky-card lives" id="lives">🔴 🔴 🔴 🔴 🔴</div><button id="sound" class="rounded-full bg-slate-200 px-3 py-2" aria-label="효과음 켜기 또는 끄기">🔊</button>
+ </header>
+ <main id="drop-zone"><div id="words"></div><div id="danger"><span class="inline-block bg-red-500 text-white text-xs px-2 py-1 rounded">⚠️ 위험 구역</span></div><div id="level-banner" class="hidden absolute top-1/3 left-1/2 -translate-x-1/2 bg-yellow-300 border-4 border-white rounded-2xl px-5 py-3 text-2xl shadow-xl z-10">LEVEL UP!</div></main>
+ <form id="typing" class="flex gap-2"><input id="word-input" placeholder="포켓몬 이름 입력 후 Enter!" autocomplete="off" autocapitalize="off"><button class="btn shrink-0" type="submit">잡기!</button></form>
+</section>
+<section id="over" class="hidden fixed inset-0 z-20 bg-slate-900/60 p-3 flex items-center justify-center">
+ <div id="gameover-card" class="panel w-full max-w-md p-6 text-center"><div class="text-4xl">🏁</div><h2 class="text-3xl mt-1">모험 종료!</h2><p class="mt-2"><span id="final-name"></span> 트레이너의 최종 점수</p><div id="final-score" class="text-5xl text-amber-600 my-2">0점</div><p id="praise" class="text-amber-800 mb-4"></p><h3 class="text-lg mb-2">🏆 명예의 전당 TOP 5</h3><div id="ranking" class="space-y-1 text-left"></div><p id="save-message" class="small mt-3 text-slate-600"></p><div class="flex gap-2 mt-4"><button id="retry" class="btn flex-1">다시 도전하기</button><button id="home" class="btn flex-1 bg-sky-300 border-sky-600">처음으로</button></div>
+ </div>
+</section>
+<script>
+/*
+ * Cloud leaderboard setup:
+ * Set SUPABASE_URL and SUPABASE_ANON_KEY below after creating the table described in README.md.
+ * The anon key is intended for browser use; never put a service_role key here.
+ */
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+const TABLE = "scores";
+const LOCAL_KEY = "pkm-tjmaster-scores-v2";
+const POKEMON = ["피카츄","라이츄","피츄","파이리","리자드","리자몽","꼬부기","어니부기","거북왕","고라파덕","발챙이","야도란","잉어킹","갸라도스","라프라스","이상해씨","이상해풀","이상해꽃","캐터피","버터플","치코리타","나무지기","모부기","푸린","삐삐","토게피","뮤츠","뮤","팬텀","고오스","구구","피죤투","꼬렛","나옹","잠만보","이브이","메타몽","미뇽","신뇽","망나뇽","브케인","아차모","염버니","팽도리","개구마르","나몰빼미","메타몽","피츄","샤미드","부스터","식스테일","나인테일","가디","윈디","포니타","별가사리","셀러","리아코","물짱이","럭키","해피너스","님피아","후딘","뮤츠","레쿠쟈"];
+const $=id=>document.getElementById(id);
+const state={name:"",score:0,lives:5,level:1,running:false,words:[],last:0,lastSpawn:0,raf:0,sound:true,localOnly:true};
+const levelConfig={1:{min:0,speed:1,spawn:2300},2:{min:50,speed:1.3,spawn:1900},3:{min:100,speed:1.6,spawn:1550},4:{min:150,speed:2,spawn:1250}};
+function cloudReady(){return Boolean(SUPABASE_URL.startsWith("https://")&&SUPABASE_ANON_KEY.length>20)}
+function setStatus(msg,kind="warn"){$("cloud-status").textContent=msg;$("cloud-status").className="status "+kind}
+function localScores(){try{const a=JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");return Array.isArray(a)?a:[]}catch{return []}}
+function saveLocal(row){const all=[row,...localScores()].sort((a,b)=>b.score-a.score).slice(0,100);try{localStorage.setItem(LOCAL_KEY,JSON.stringify(all))}catch{}}
+async function api(path,options={}){const response=await fetch(SUPABASE_URL+"/rest/v1/"+path,{...options,headers:{"apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json","Prefer":"return=representation",...(options.headers||{})}});if(!response.ok)throw new Error("Cloud request failed ("+response.status+")");return response.status===204?[]:response.json()}
+function normalizeRows(rows){return rows.map(r=>({id:r.id,name:String(r.player_name||"트레이너").slice(0,20),score:Number(r.score)||0,created_at:r.created_at||""})).sort((a,b)=>b.score-a.score||String(a.created_at).localeCompare(String(b.created_at)))}
+async function getScores(){if(cloudReady()){try{const rows=await api(TABLE+"?select=id,player_name,score,created_at&order=score.desc,created_at.asc&limit=100");state.localOnly=false;setStatus("전체 기기 공유 랭킹","ok");return normalizeRows(rows)}catch(e){console.error(e);setStatus("클라우드 연결 실패 · 이 기기 기록 표시","warn")}}else setStatus("로컬 랭킹 · 클라우드 설정 필요","warn");state.localOnly=true;return localScores()}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function drawList(id,rows,limit){const list=$(id),shown=rows.slice(0,limit);list.innerHTML=shown.length?shown.map((r,i)=>'<div class="flex items-center justify-between gap-2 sky-card"><span class="truncate">'+["🥇","🥈","🥉","4️⃣","5️⃣"][i]+' '+escapeHTML(r.name)+'</span><strong class="text-amber-700 shrink-0">'+r.score+'점</strong></div>').join(''):'<p class="text-sm text-slate-500 text-center py-2">아직 기록이 없어요. 첫 번째 마스터가 되어 보세요!</p>'}
+async function renderRankings(){const rows=await getScores();drawList("top3",rows,3);drawList("ranking",rows,5)}
+function updateHUD(){$("hud-name").textContent=state.name;$("score").textContent=state.score;$("level").textContent="Lv."+state.level;$("lives").textContent="🔴 ".repeat(state.lives)+"⚪ ".repeat(5-state.lives)}
+function sound(type){if(!state.sound)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=type==="hit"?660:type==="miss"?180:440;g.gain.value=.04;o.start();o.stop(ctx.currentTime+.09);o.onended=()=>ctx.close()}catch{}}
+function spawn(){const name=POKEMON[Math.floor(Math.random()*POKEMON.length)],el=document.createElement("div");el.className="word";el.textContent=name;const x=10+Math.random()*80;el.style.left=x+"%";el.style.top="-45px";$("words").appendChild(el);state.words.push({name,y:-45,x,el,speed:.92+Math.random()*.16,id:Math.random()})}
+function loop(t){if(!state.running)return;if(!state.last)state.last=t;const dt=Math.min((t-state.last)/1000,.05);state.last=t;const cfg=levelConfig[state.level];if(t-state.lastSpawn>cfg.spawn){spawn();state.lastSpawn=t}const h=$("drop-zone").clientHeight,danger=h-34;for(let i=state.words.length-1;i>=0;i--){const w=state.words[i];w.y+=48*cfg.speed*w.speed*dt;w.el.style.top=w.y+"px";if(w.y+42>=danger){w.el.remove();state.words.splice(i,1);state.lives--;sound("miss");updateHUD();$("game").classList.add("shake");setTimeout(()=>$("game").classList.remove("shake"),260);if(state.lives<=0){endGame();break}}}if(state.running)state.raf=requestAnimationFrame(loop)}
+function startGame(){const name=$("name-input").value.trim();if(!name){$("name-error").classList.remove("hidden");$("name-input").focus();return}state.name=name.slice(0,20);state.score=0;state.lives=5;state.level=1;state.running=true;state.words.forEach(w=>w.el.remove());state.words=[];state.last=0;state.lastSpawn=performance.now();$("words").innerHTML="";$("level-banner").classList.add("hidden");$("start").classList.add("hidden");$("over").classList.add("hidden");$("game").classList.remove("hidden");updateHUD();spawn();$("word-input").value="";setTimeout(()=>$("word-input").focus(),50);cancelAnimationFrame(state.raf);state.raf=requestAnimationFrame(loop)}
+function answer(value){const text=value.trim();if(!text)return;let idx=-1,bottom=-Infinity;state.words.forEach((w,i)=>{if(w.name===text&&w.y>bottom){bottom=w.y;idx=i}});if(idx<0){$("word-input").classList.add("shake");setTimeout(()=>$("word-input").classList.remove("shake"),250);return}const w=state.words.splice(idx,1)[0];w.el.remove();state.score++;sound("hit");const next=state.score>=150?4:state.score>=100?3:state.score>=50?2:1;if(next>state.level){state.level=next;$("level-banner").textContent="⚡ LEVEL "+next+" UP!";$("level-banner").classList.remove("hidden");setTimeout(()=>$("level-banner").classList.add("hidden"),1400)}updateHUD()}
+async function persistScore(){const row={name:state.name,score:state.score,created_at:new Date().toISOString()};saveLocal(row);if(!cloudReady())return {ok:false,message:"이 기기에 저장했어요. 모든 기기에서 공유하려면 README의 Supabase 설정이 필요합니다."};try{await api(TABLE,{method:"POST",body:JSON.stringify({player_name:row.name,score:row.score})});state.localOnly=false;return {ok:true,message:"점수를 클라우드에 저장했습니다."}}catch(e){console.error(e);return {ok:false,message:"클라우드 저장에 실패해 이 기기에만 저장했습니다. 연결 설정을 확인해 주세요."}}}
+async function endGame(){if(!state.running)return;state.running=false;cancelAnimationFrame(state.raf);$("final-name").textContent=state.name;$("final-score").textContent=state.score+"점";$("praise").textContent=state.score>=150?"👑 전설의 포켓몬 마스터!":state.score>=100?"🌟 체육관 관장님 실력이에요!":state.score>=50?"⚡ 타자 속도가 늘고 있어요!":"🌱 멋진 도전이었어요. 한 번 더 해볼까요?";$("over").classList.remove("hidden");$("save-message").textContent="점수 저장 중…";const result=await persistScore();$("save-message").textContent=result.message;await renderRankings()}
+$("start-btn").addEventListener("click",startGame);$("name-input").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();startGame()}else $("name-error").classList.add("hidden")});
+$("typing").addEventListener("submit",e=>{e.preventDefault();if(!state.running)return;const input=$("word-input");if(e.isComposing)return;answer(input.value);input.value="";input.focus()});
+$("sound").addEventListener("click",()=>{state.sound=!state.sound;$("sound").textContent=state.sound?"🔊":"🔇";$("word-input").focus()});
+$("retry").addEventListener("click",startGame);$("home").addEventListener("click",()=>{$("over").classList.add("hidden");$("game").classList.add("hidden");$("start").classList.remove("hidden");renderRankings();$("name-input").focus()});
+$("refresh").addEventListener("click",renderRankings);
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&state.running){state.last=0}});
+window.addEventListener("resize",()=>{if(state.running){const width=$("drop-zone").clientWidth;state.words.forEach(w=>{const px=Math.min(width-35,Math.max(35,width*w.x/100));w.el.style.left=px+"px"})}});
+renderRankings();
+</script>
+</body></html>
