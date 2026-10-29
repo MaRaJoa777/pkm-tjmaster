@@ -1,76 +1,939 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#74d0ff"><title>포켓몬 타자 마스터</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box}body{font-family:Jua,sans-serif;margin:0;min-height:100dvh;background:linear-gradient(#72d1ff 0 66%,#b5e9ff 66% 75%,#7fc65b 75%);color:#172033}button,input{font:inherit}button{touch-action:manipulation}.panel{background:#ffffffed;border:2px solid #d6e7f4;border-radius:20px;box-shadow:0 8px 24px #17405a26}.btn{border:2px solid #b77905;background:#ffcf32;color:#513700;border-radius:14px;padding:12px 18px;box-shadow:0 4px 0 #a66d00}.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #a66d00}.hidden{display:none!important}#game{height:100dvh;min-height:480px;display:flex;flex-direction:column}#drop-zone{position:relative;overflow:hidden;flex:1;min-height:0}#words{position:absolute;inset:0;pointer-events:none}.word{position:absolute;transform:translateX(-50%);padding:6px 13px;border:3px solid #fff;border-radius:999px;background:#ffe16b;box-shadow:0 4px 10px #0002;white-space:nowrap;font-size:clamp(18px,3vw,25px)}#danger{position:absolute;bottom:28px;left:0;width:100%;border-top:4px dashed #e34b4b}#typing{padding:10px;background:#238345;border-top:4px solid #176a35;padding-bottom:max(10px,env(safe-area-inset-bottom))}#word-input{min-width:0;width:100%;font-size:clamp(18px,4vw,25px);padding:12px;border:3px solid #ffcf32;border-radius:12px;outline:none;user-select:text}#name-input{user-select:text}#ranking{max-height:260px;overflow:auto}.shake{animation:shake .25s}@keyframes shake{25%,75%{transform:translateX(-4px)}50%{transform:translateX(4px)}}.sky-card{background:#effaff;border:1px solid #c5dce9;border-radius:12px;padding:8px 10px}.small{font-size:13px}.status{font-size:12px;padding:3px 8px;border-radius:99px;background:#e2e8f0;color:#334155}.status.ok{background:#dcfce7;color:#166534}.status.warn{background:#fef3c7;color:#92400e}@media(max-width:600px){.panel{border-radius:16px}.start-card{padding:18px!important}.hud{gap:6px!important;padding:8px!important}.hud .sky-card{padding:5px 7px}.lives{font-size:15px!important}#ranking{max-height:180px}#danger span{font-size:11px}#gameover-card{max-height:92dvh;overflow:auto}.btn{padding:10px 12px}}@media(max-height:650px){.start-card{padding:14px!important}.start-title{margin:4px 0!important}.badge-row{margin:8px 0!important}.ranking-preview{padding:8px!important}#gameover-card{padding:14px!important}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포켓몬 타자 마스터</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Jua (귀엽고 가독성 좋은 둥근 한글 폰트) -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <!-- Tone.js (효과음 생성용) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Font Awesome (아이콘) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Jua', sans-serif;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* 귀여운 구름 배경 애니메이션 */
+        @keyframes floatCloud {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100vw); }
+        }
+        .cloud-1 { animation: floatCloud 35s linear infinite; }
+        .cloud-2 { animation: floatCloud 50s linear infinite; animation-delay: -20s; }
+        .cloud-3 { animation: floatCloud 42s linear infinite; animation-delay: -10s; }
+
+        /* 데미지 입었을 때 화면 흔들림 효과 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .shake-effect {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* 정답 맞췄을 때 팝업 효과 */
+        @keyframes popOut {
+            0% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -15px) scale(1.3); opacity: 0.9; }
+            100% { transform: translate(-50%, -30px) scale(0); opacity: 0; }
+        }
+        .pop-animation {
+            animation: popOut 0.35s ease-out forwards;
+        }
+
+        /* 레벨업 배너 애니메이션 */
+        @keyframes levelUpBounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.15); }
+        }
+        .levelup-anim {
+            animation: levelUpBounce 0.6s infinite;
+        }
+
+        /* 몬스터볼 회전 효과 */
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin-slow {
+            animation: spinSlow 12s linear infinite;
+        }
+
+        /* 커스텀 버튼 그림자 */
+        .poke-btn {
+            box-shadow: 0 6px 0 #b45309;
+            transition: all 0.1s;
+        }
+        .poke-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #b45309;
+        }
+        
+        .poke-btn-blue {
+            box-shadow: 0 6px 0 #1d4ed8;
+            transition: all 0.1s;
+        }
+        .poke-btn-blue:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #1d4ed8;
+        }
+    </style>
 </head>
-<body>
-<section id="start" class="min-h-dvh flex items-center justify-center p-4">
- <div class="panel start-card w-full max-w-md p-7 text-center">
-  <div class="text-6xl -mt-2">🔴</div><div class="start-title my-4"><div class="text-sm text-amber-700">신나는 한글 자판 모험!</div><h1 class="text-4xl text-slate-800 mt-1">포켓몬 타자 마스터</h1><p class="text-slate-600 text-sm mt-2">바닥에 닿기 전에 포켓몬 이름을 입력해 잡으세요!</p></div>
-  <div class="badge-row flex justify-center flex-wrap gap-2 my-5 text-sm"><span class="bg-yellow-200 rounded-full px-3 py-1">⚡ 피카츄</span><span class="bg-red-200 rounded-full px-3 py-1">🔥 파이리</span><span class="bg-sky-200 rounded-full px-3 py-1">💧 꼬부기</span><span class="bg-green-200 rounded-full px-3 py-1">🌿 이상해씨</span></div>
-  <label for="name-input" class="block mb-2 text-lg">🧢 트레이너 이름</label><input id="name-input" maxlength="20" autocomplete="nickname" class="w-full border-2 border-sky-300 rounded-xl p-3 text-center text-xl" placeholder="예: 하준">
-  <p id="name-error" class="hidden text-red-600 text-sm mt-2">이름을 입력해 주세요.</p><button id="start-btn" class="btn w-full text-xl mt-4">모험 시작하기! ▶</button>
-  <div class="ranking-preview mt-5 bg-slate-50 border rounded-xl p-3 text-left"><div class="text-center mb-2">🏆 명예의 전당 TOP 3</div><div id="top3" class="space-y-1"></div></div>
-  <div class="mt-3 flex items-center justify-center gap-2"><span id="cloud-status" class="status">랭킹 연결 확인 중</span><button id="refresh" class="text-sm underline text-slate-600">새로고침</button></div>
-  <p class="small text-slate-500 mt-2">기기 간 랭킹 공유는 README의 Cloudflare Worker 설정이 필요합니다.</p>
- </div>
-</section>
-<section id="game" class="hidden">
- <header class="hud flex flex-wrap items-center justify-between gap-3 bg-white/90 border-b-4 border-yellow-400 p-3 z-10">
-  <div class="sky-card"><div class="small text-slate-500">트레이너</div><strong id="hud-name">-</strong></div>
-  <div class="flex gap-2"><div class="sky-card text-center"><div class="small">점수</div><strong id="score">0</strong>점</div><div class="sky-card text-center"><div class="small">레벨</div><strong id="level">Lv.1</strong></div></div>
-  <div class="sky-card lives" id="lives">🔴 🔴 🔴 🔴 🔴</div><button id="sound" class="rounded-full bg-slate-200 px-3 py-2" aria-label="효과음 켜기 또는 끄기">🔊</button>
- </header>
- <main id="drop-zone"><div id="words"></div><div id="danger"><span class="inline-block bg-red-500 text-white text-xs px-2 py-1 rounded">⚠️ 위험 구역</span></div><div id="level-banner" class="hidden absolute top-1/3 left-1/2 -translate-x-1/2 bg-yellow-300 border-4 border-white rounded-2xl px-5 py-3 text-2xl shadow-xl z-10">LEVEL UP!</div></main>
- <form id="typing" class="flex gap-2"><input id="word-input" placeholder="포켓몬 이름 입력 후 Enter!" autocomplete="off" autocapitalize="off"><button class="btn shrink-0" type="submit">잡기!</button></form>
-</section>
-<section id="over" class="hidden fixed inset-0 z-20 bg-slate-900/60 p-3 flex items-center justify-center">
- <div id="gameover-card" class="panel w-full max-w-md p-6 text-center"><div class="text-4xl">🏁</div><h2 class="text-3xl mt-1">모험 종료!</h2><p class="mt-2"><span id="final-name"></span> 트레이너의 최종 점수</p><div id="final-score" class="text-5xl text-amber-600 my-2">0점</div><p id="praise" class="text-amber-800 mb-4"></p><h3 class="text-lg mb-2">🏆 명예의 전당 TOP 5</h3><div id="ranking" class="space-y-1 text-left"></div><p id="save-message" class="small mt-3 text-slate-600"></p><div class="flex gap-2 mt-4"><button id="retry" class="btn flex-1">다시 도전하기</button><button id="home" class="btn flex-1 bg-sky-300 border-sky-600">처음으로</button></div>
- </div>
-</section>
-<script>
-/*
- * Cloud leaderboard setup:
- * Deploy worker.js to Cloudflare, then set this public endpoint URL.
- * No GitHub token belongs in this browser file.
- */
-const LEADERBOARD_API_URL = "https://pkm-tjmaster-leaderboard.steven76.workers.dev/";
-const LOCAL_KEY = "pkm-tjmaster-scores-v2";
-const POKEMON = ["피카츄","라이츄","피츄","파이리","리자드","리자몽","꼬부기","어니부기","거북왕","고라파덕","발챙이","야도란","잉어킹","갸라도스","라프라스","이상해씨","이상해풀","이상해꽃","캐터피","버터플","치코리타","나무지기","모부기","푸린","삐삐","토게피","뮤츠","뮤","팬텀","고오스","구구","피죤투","꼬렛","나옹","잠만보","이브이","메타몽","미뇽","신뇽","망나뇽","브케인","아차모","염버니","팽도리","개구마르","나몰빼미","메타몽","피츄","샤미드","부스터","식스테일","나인테일","가디","윈디","포니타","별가사리","셀러","리아코","물짱이","럭키","해피너스","님피아","후딘","뮤츠","레쿠쟈"];
-const $=id=>document.getElementById(id);
-const state={name:"",score:0,lives:5,level:1,running:false,words:[],last:0,lastSpawn:0,raf:0,sound:true,localOnly:true};
-const levelConfig={1:{min:0,speed:1,spawn:2300},2:{min:50,speed:1.3,spawn:1900},3:{min:100,speed:1.6,spawn:1550},4:{min:150,speed:2,spawn:1250}};
-function cloudReady(){return Boolean(LEADERBOARD_API_URL.startsWith("https://"))}
-function setStatus(msg,kind="warn"){$("cloud-status").textContent=msg;$("cloud-status").className="status "+kind}
-function localScores(){try{const a=JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");return Array.isArray(a)?a:[]}catch{return []}}
-function saveLocal(row){const all=[row,...localScores()].sort((a,b)=>b.score-a.score).slice(0,100);try{localStorage.setItem(LOCAL_KEY,JSON.stringify(all))}catch{}}
-async function leaderboardRequest(method="GET",body){const response=await fetch(LEADERBOARD_API_URL.replace(/\/$/,"")+"/scores",{method,headers:{"Content-Type":"application/json"},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||("Leaderboard request failed ("+response.status+")"));return data}
-function normalizeRows(rows){return rows.map(r=>({id:r.id,name:String(r.name||"트레이너").slice(0,20),score:Number(r.score)||0,created_at:r.created_at||""})).sort((a,b)=>b.score-a.score||String(a.created_at).localeCompare(String(b.created_at)))}
-async function getScores(){if(cloudReady()){try{const data=await leaderboardRequest("GET");state.localOnly=false;setStatus("GitHub 공용 랭킹","ok");return normalizeRows(Array.isArray(data.scores)?data.scores:[])}catch(e){console.error(e);setStatus("공용 랭킹 연결 실패 · 이 기기 기록 표시","warn")}}else setStatus("로컬 랭킹 · Worker 주소 설정 필요","warn");state.localOnly=true;return localScores()}
-function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function drawList(id,rows,limit){const list=$(id),shown=rows.slice(0,limit);list.innerHTML=shown.length?shown.map((r,i)=>'<div class="flex items-center justify-between gap-2 sky-card"><span class="truncate">'+["🥇","🥈","🥉","4️⃣","5️⃣"][i]+' '+escapeHTML(r.name)+'</span><strong class="text-amber-700 shrink-0">'+r.score+'점</strong></div>').join(''):'<p class="text-sm text-slate-500 text-center py-2">아직 기록이 없어요. 첫 번째 마스터가 되어 보세요!</p>'}
-async function renderRankings(){const rows=await getScores();drawList("top3",rows,3);drawList("ranking",rows,5)}
-function updateHUD(){$("hud-name").textContent=state.name;$("score").textContent=state.score;$("level").textContent="Lv."+state.level;$("lives").textContent="🔴 ".repeat(state.lives)+"⚪ ".repeat(5-state.lives)}
-function sound(type){if(!state.sound)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=type==="hit"?660:type==="miss"?180:440;g.gain.value=.04;o.start();o.stop(ctx.currentTime+.09);o.onended=()=>ctx.close()}catch{}}
-function spawn(){const name=POKEMON[Math.floor(Math.random()*POKEMON.length)],el=document.createElement("div");el.className="word";el.textContent=name;const x=10+Math.random()*80;el.style.left=x+"%";el.style.top="-45px";$("words").appendChild(el);state.words.push({name,y:-45,x,el,speed:.92+Math.random()*.16,id:Math.random()})}
-function loop(t){if(!state.running)return;if(!state.last)state.last=t;const dt=Math.min((t-state.last)/1000,.05);state.last=t;const cfg=levelConfig[state.level];if(t-state.lastSpawn>cfg.spawn){spawn();state.lastSpawn=t}const h=$("drop-zone").clientHeight,danger=h-34;for(let i=state.words.length-1;i>=0;i--){const w=state.words[i];w.y+=48*cfg.speed*w.speed*dt;w.el.style.top=w.y+"px";if(w.y+42>=danger){w.el.remove();state.words.splice(i,1);state.lives--;sound("miss");updateHUD();$("game").classList.add("shake");setTimeout(()=>$("game").classList.remove("shake"),260);if(state.lives<=0){endGame();break}}}if(state.running)state.raf=requestAnimationFrame(loop)}
-function startGame(){const name=$("name-input").value.trim();if(!name){$("name-error").classList.remove("hidden");$("name-input").focus();return}state.name=name.slice(0,20);state.score=0;state.lives=5;state.level=1;state.running=true;state.words.forEach(w=>w.el.remove());state.words=[];state.last=0;state.lastSpawn=performance.now();$("words").innerHTML="";$("level-banner").classList.add("hidden");$("start").classList.add("hidden");$("over").classList.add("hidden");$("game").classList.remove("hidden");updateHUD();spawn();$("word-input").value="";setTimeout(()=>$("word-input").focus(),50);cancelAnimationFrame(state.raf);state.raf=requestAnimationFrame(loop)}
-function answer(value){const text=value.trim();if(!text)return;let idx=-1,bottom=-Infinity;state.words.forEach((w,i)=>{if(w.name===text&&w.y>bottom){bottom=w.y;idx=i}});if(idx<0){$("word-input").classList.add("shake");setTimeout(()=>$("word-input").classList.remove("shake"),250);return}const w=state.words.splice(idx,1)[0];w.el.remove();state.score++;sound("hit");const next=state.score>=150?4:state.score>=100?3:state.score>=50?2:1;if(next>state.level){state.level=next;$("level-banner").textContent="⚡ LEVEL "+next+" UP!";$("level-banner").classList.remove("hidden");setTimeout(()=>$("level-banner").classList.add("hidden"),1400)}updateHUD()}
-async function persistScore(){const row={name:state.name,score:state.score,created_at:new Date().toISOString()};saveLocal(row);if(!cloudReady())return {ok:false,message:"이 기기에 저장했어요. 공용 랭킹을 사용하려면 README의 Cloudflare Worker 설정이 필요합니다."};try{await leaderboardRequest("POST",{name:row.name,score:row.score});state.localOnly=false;return {ok:true,message:"GitHub 공용 랭킹에 점수를 저장했습니다."}}catch(e){console.error(e);return {ok:false,message:"공용 저장에 실패해 이 기기에만 저장했습니다. Worker 설정과 연결 상태를 확인해 주세요."}}}
-async function endGame(){if(!state.running)return;state.running=false;cancelAnimationFrame(state.raf);$("final-name").textContent=state.name;$("final-score").textContent=state.score+"점";$("praise").textContent=state.score>=150?"👑 전설의 포켓몬 마스터!":state.score>=100?"🌟 체육관 관장님 실력이에요!":state.score>=50?"⚡ 타자 속도가 늘고 있어요!":"🌱 멋진 도전이었어요. 한 번 더 해볼까요?";$("over").classList.remove("hidden");$("save-message").textContent="점수 저장 중…";const result=await persistScore();$("save-message").textContent=result.message;await renderRankings()}
-$("start-btn").addEventListener("click",startGame);$("name-input").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();startGame()}else $("name-error").classList.add("hidden")});
-$("typing").addEventListener("submit",e=>{e.preventDefault();if(!state.running)return;const input=$("word-input");if(e.isComposing)return;answer(input.value);input.value="";input.focus()});
-$("sound").addEventListener("click",()=>{state.sound=!state.sound;$("sound").textContent=state.sound?"🔊":"🔇";$("word-input").focus()});
-$("retry").addEventListener("click",startGame);$("home").addEventListener("click",()=>{$("over").classList.add("hidden");$("game").classList.add("hidden");$("start").classList.remove("hidden");renderRankings();$("name-input").focus()});
-$("refresh").addEventListener("click",renderRankings);
-document.addEventListener("visibilitychange",()=>{if(document.hidden&&state.running){state.last=0}});
-window.addEventListener("resize",()=>{if(state.running){const width=$("drop-zone").clientWidth;state.words.forEach(w=>{const px=Math.min(width-35,Math.max(35,width*w.x/100));w.el.style.left=px+"px"})}});
-renderRankings();
-</script>
-</body></html>
+<body class="bg-sky-200 w-screen h-screen flex flex-col justify-between relative overflow-hidden">
+
+    <!-- 배경 구름 및 장식 -->
+    <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="cloud-1 absolute top-12 left-0 text-white/70 text-7xl"><i class="fa-solid fa-cloud"></i></div>
+        <div class="cloud-2 absolute top-32 left-0 text-white/60 text-9xl"><i class="fa-solid fa-cloud"></i></div>
+        <div class="cloud-3 absolute top-60 left-0 text-white/50 text-6xl"><i class="fa-solid fa-cloud"></i></div>
+        <!-- 하단 초원 배경 -->
+        <div class="absolute bottom-0 w-full h-24 bg-gradient-to-t from-green-500 to-green-400 border-t-4 border-green-600"></div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 1. 시작 화면 (Start Screen)                 -->
+    <!-- ========================================== -->
+    <div id="start-screen" class="relative z-20 flex-1 flex flex-col items-center justify-center p-4">
+        <div class="bg-white/95 backdrop-blur-md border-4 border-yellow-400 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center relative">
+            
+            <!-- 상단 몬스터볼 장식 아이콘 -->
+            <div class="w-20 h-20 mx-auto -mt-16 bg-white rounded-full p-1 shadow-lg flex items-center justify-center">
+                <svg viewBox="0 0 100 100" class="w-full h-full spin-slow">
+                    <circle cx="50" cy="50" r="46" fill="#fff" stroke="#222" stroke-width="6"/>
+                    <path d="M 4 50 A 46 46 0 0 1 96 50 Z" fill="#FF3B30" stroke="#222" stroke-width="6"/>
+                    <line x1="4" y1="50" x2="96" y2="50" stroke="#222" stroke-width="8"/>
+                    <circle cx="50" cy="50" r="14" fill="#fff" stroke="#222" stroke-width="6"/>
+                    <circle cx="50" cy="50" r="6" fill="#222"/>
+                </svg>
+            </div>
+
+            <!-- 타이틀 -->
+            <div class="mt-3 mb-6">
+                <span class="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm tracking-wider shadow-sm">신나는 한글 자판 모험!</span>
+                <h1 class="text-4xl sm:text-5xl text-slate-800 mt-2 tracking-tight drop-shadow-sm">
+                    <span class="text-yellow-500">포켓몬</span> 타자 마스터
+                </h1>
+                <p class="text-slate-500 text-sm sm:text-base mt-1">바닥에 닿기 전에 포켓몬 이름을 입력해 잡으세요!</p>
+            </div>
+
+            <!-- 대표 캐릭터 뱃지 장식 -->
+            <div class="flex justify-center gap-2 mb-6">
+                <span class="bg-yellow-300 border-2 border-yellow-500 text-yellow-950 px-3 py-1 rounded-full text-sm shadow-sm">⚡ 피카츄</span>
+                <span class="bg-red-400 border-2 border-red-600 text-white px-3 py-1 rounded-full text-sm shadow-sm">🔥 파이리</span>
+                <span class="bg-sky-400 border-2 border-sky-600 text-white px-3 py-1 rounded-full text-sm shadow-sm">💧 꼬부기</span>
+                <span class="bg-emerald-400 border-2 border-emerald-600 text-white px-3 py-1 rounded-full text-sm shadow-sm">🌿 이상해씨</span>
+            </div>
+
+            <!-- 이름 입력 영역 -->
+            <div class="mb-6 text-left">
+                <label for="trainer-name-input" class="block text-slate-700 text-lg mb-2 text-center">
+                    🧢 트레이너의 이름을 알려주세요!
+                </label>
+                <input type="text" id="trainer-name-input" maxlength="10" placeholder="예: 지우, 피카츄대장" 
+                    class="w-full px-4 py-3 text-xl text-center bg-slate-50 border-4 border-sky-400 rounded-2xl focus:outline-none focus:border-yellow-400 focus:bg-white transition-colors text-slate-800 placeholder-slate-400"
+                    autocomplete="off">
+                <!-- 이름 미입력 경고 메시지 -->
+                <p id="name-error-msg" class="text-red-500 text-center text-sm mt-2 hidden">
+                    <i class="fa-solid fa-circle-exclamation"></i> 이름을 입력해야 모험을 떠날 수 있어요!
+                </p>
+            </div>
+
+            <!-- 게임 시작 버튼 -->
+            <button id="start-game-btn" class="poke-btn w-full bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-2xl py-3.5 rounded-2xl border-2 border-yellow-600 cursor-pointer mb-6 flex items-center justify-center gap-2">
+                <span>모험 시작하기!</span>
+                <i class="fa-solid fa-play text-lg"></i>
+            </button>
+
+            <!-- 명예의 전당 미리보기 (Top 3) -->
+            <div class="bg-slate-100 rounded-2xl p-4 border-2 border-slate-200">
+                <h3 class="text-slate-700 text-base mb-2 flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-crown text-yellow-500"></i> 명예의 전당 TOP 3
+                </h3>
+                <div id="start-ranking-list" class="space-y-1.5 text-sm">
+                    <!-- JS로 렌더링 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. 게임 진행 화면 (Game Play Screen)         -->
+    <!-- ========================================== -->
+    <div id="game-screen" class="hidden relative z-10 flex-1 flex flex-col justify-between h-full">
+        
+        <!-- 상단 정보 바 (HUD) -->
+        <header class="bg-white/90 backdrop-blur border-b-4 border-yellow-400 px-4 py-2.5 shadow-md flex flex-wrap items-center justify-between gap-2 z-20">
+            <!-- 트레이너 정보 -->
+            <div class="flex items-center gap-2 bg-sky-100 px-3 py-1.5 rounded-2xl border-2 border-sky-300">
+                <span class="text-xl">🧢</span>
+                <div>
+                    <span class="text-xs text-sky-700 block leading-none">트레이너</span>
+                    <span id="hud-trainer-name" class="text-base sm:text-lg text-slate-800">지우</span>
+                </div>
+            </div>
+
+            <!-- 점수 및 속도 레벨 -->
+            <div class="flex items-center gap-3">
+                <div class="bg-yellow-100 border-2 border-yellow-400 px-4 py-1 rounded-2xl text-center">
+                    <span class="text-xs text-yellow-800 block leading-none">획득 포인트</span>
+                    <span id="hud-score" class="text-xl sm:text-2xl text-yellow-600">0</span><span class="text-sm text-yellow-800">점</span>
+                </div>
+                <div class="bg-purple-100 border-2 border-purple-400 px-3 py-1 rounded-2xl text-center">
+                    <span class="text-xs text-purple-800 block leading-none">속도 레벨</span>
+                    <span id="hud-level" class="text-lg sm:text-xl text-purple-700">Lv.1</span>
+                </div>
+            </div>
+
+            <!-- 생명력 (몬스터볼 5개) & 소리 켜기/끄기 -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-2xl border-2 border-red-200" id="hud-lives">
+                    <!-- JS로 몬스터볼 아이콘 5개 렌더링 -->
+                </div>
+                <button id="sound-toggle-btn" class="w-10 h-10 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center border-2 border-slate-300 text-lg cursor-pointer" title="효과음 켜기/끄기">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 중앙 단어 낙하 구역 (Drop Zone) -->
+        <main id="drop-zone" class="relative flex-1 w-full overflow-hidden">
+            
+            <!-- 레벨업 알림 배너 (기본 숨김) -->
+            <div id="levelup-banner" class="hidden absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+                <div class="levelup-anim bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white px-8 py-4 rounded-3xl shadow-2xl border-4 border-white text-center">
+                    <p class="text-xl">⚡ 스피드 업! ⚡</p>
+                    <p id="levelup-text" class="text-3xl sm:text-4xl mt-1">포켓몬들이 더 빨리 떨어져요!</p>
+                </div>
+            </div>
+
+            <!-- 단어들이 생성되어 떨어지는 컨테이너 -->
+            <div id="words-container" class="absolute inset-0 pointer-events-none"></div>
+
+            <!-- 바닥 위험 구역 표시선 (Danger Line) -->
+            <div id="danger-line" class="absolute bottom-4 left-0 w-full border-b-4 border-dashed border-red-500/80 flex justify-between items-end px-4 pb-1 pointer-events-none">
+                <span class="bg-red-500 text-white text-xs px-2.5 py-0.5 rounded-full shadow">⚠️ 위험 구역! 여기에 닿으면 생명이 줄어들어요</span>
+                <span class="bg-red-500 text-white text-xs px-2.5 py-0.5 rounded-full shadow hidden sm:inline">⚡ 빠르게 타이핑하세요!</span>
+            </div>
+        </main>
+
+        <!-- 하단 타이핑 컨트롤 바 -->
+        <footer class="bg-green-600/90 backdrop-blur-sm px-4 py-3 border-t-4 border-green-700 z-20">
+            <form id="typing-form" class="max-w-xl mx-auto flex gap-2">
+                <div class="relative flex-1">
+                    <input type="text" id="word-input" placeholder="포켓몬 이름을 입력하고 Enter!" 
+                        class="w-full pl-5 pr-12 py-3 text-xl sm:text-2xl bg-white border-4 border-yellow-400 rounded-2xl shadow-inner focus:outline-none focus:border-sky-400 text-slate-800 placeholder-slate-400"
+                        autocomplete="off">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Enter ↵</span>
+                </div>
+                <button type="submit" class="poke-btn bg-yellow-400 hover:bg-yellow-300 text-yellow-950 px-6 py-3 rounded-2xl text-xl border-2 border-yellow-600 cursor-pointer shrink-0">
+                    잡기!
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. 게임 오버 및 랭킹 화면 (Game Over Screen)  -->
+    <!-- ========================================== -->
+    <div id="gameover-screen" class="hidden relative z-30 flex-1 flex flex-col items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white border-4 border-red-400 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center animate-bounce-short">
+            
+            <div class="inline-block bg-red-100 text-red-600 px-4 py-1 rounded-full text-sm border border-red-300 mb-2">
+                몬스터볼을 모두 사용했어요!
+            </div>
+            <h2 class="text-4xl sm:text-5xl text-slate-800 mb-4">모험 종료!</h2>
+
+            <!-- 최종 점수 카드 -->
+            <div class="bg-gradient-to-br from-yellow-100 to-amber-100 border-4 border-yellow-400 rounded-2xl p-4 mb-6 shadow-inner">
+                <p class="text-slate-600 text-base"><span id="final-trainer-name" class="text-slate-900 underline">지우</span> 트레이너의 최종 점수</p>
+                <p class="text-5xl text-amber-600 my-2"><span id="final-score">0</span><span class="text-2xl text-amber-800 ml-1">점</span></p>
+                <p id="final-praise" class="text-sm text-amber-900 bg-yellow-300/60 inline-block px-3 py-0.5 rounded-full">참 잘했어요! 대단한 실력이에요!</p>
+            </div>
+
+            <!-- 명예의 전당 랭킹 (TOP 5) -->
+            <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 mb-6 text-left">
+                <h3 class="text-center text-slate-700 text-lg mb-3 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-trophy text-yellow-500"></i> 명예의 전당 랭킹 TOP 5
+                </h3>
+                <div id="gameover-ranking-list" class="space-y-2 text-base">
+                    <!-- JS로 TOP 5 렌더링 -->
+                </div>
+            </div>
+
+            <!-- 다시 하기 / 처음으로 버튼 -->
+            <div class="flex gap-3">
+                <button id="retry-btn" class="poke-btn flex-1 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-xl py-3 rounded-2xl border-2 border-yellow-600 cursor-pointer flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> 다시 도전하기
+                </button>
+                <button id="home-btn" class="poke-btn-blue bg-sky-500 hover:bg-sky-400 text-white text-xl px-5 py-3 rounded-2xl border-2 border-sky-700 cursor-pointer flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-house"></i> 처음으로
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * =====================================================
+         * 1. 포켓몬스터 단어 데이터 풀 (초등학생 맞춤형 70종)
+         * 각 포켓몬의 속성(전기, 불꽃, 물, 풀, 초능력, 노말 등)에 따른 색상 테마 지정
+         * =====================================================
+         */
+        const POKEMON_TYPES = {
+            electric: { bg: 'bg-yellow-300', border: 'border-yellow-500', text: 'text-yellow-950', icon: '⚡' },
+            fire:     { bg: 'bg-red-400',    border: 'border-red-600',    text: 'text-white',      icon: '🔥' },
+            water:    { bg: 'bg-sky-400',    border: 'border-sky-600',    text: 'text-white',      icon: '💧' },
+            grass:    { bg: 'bg-emerald-400',border: 'border-emerald-600',text: 'text-white',      icon: '🌿' },
+            fairy:    { bg: 'bg-pink-300',   border: 'border-pink-500',   text: 'text-pink-950',   icon: '🎀' },
+            psychic:  { bg: 'bg-purple-400', border: 'border-purple-600', text: 'text-white',      icon: '🔮' },
+            normal:   { bg: 'bg-amber-100',  border: 'border-amber-400',  text: 'text-amber-950',  icon: '⭐' },
+            dragon:   { bg: 'bg-indigo-500', border: 'border-indigo-700', text: 'text-white',      icon: '🐉' }
+        };
+
+        const POKEMON_LIST = [
+            // 전기 타입
+            { name: '피카츄', type: 'electric' }, { name: '라이츄', type: 'electric' }, { name: '피츄', type: 'electric' },
+            { name: '쥬피썬더', type: 'electric' }, { name: '코일', type: 'electric' }, { name: '찌리리공', type: 'electric' },
+            { name: '썬더', type: 'electric' }, { name: '전룡', type: 'electric' }, { name: '파치리스', type: 'electric' },
+            { name: '모코코', type: 'electric' },
+            
+            // 불꽃 타입
+            { name: '파이리', type: 'fire' }, { name: '리자드', type: 'fire' }, { name: '리자몽', type: 'fire' },
+            { name: '식스테일', type: 'fire' }, { name: '나인테일', type: 'fire' }, { name: '가디', type: 'fire' },
+            { name: '윈디', type: 'fire' }, { name: '포니타', type: 'fire' }, { name: '부스터', type: 'fire' },
+            { name: '파이어', type: 'fire' }, { name: '브케인', type: 'fire' }, { name: '아차모', type: 'fire' },
+            { name: '염버니', type: 'fire' },
+
+            // 물 타입
+            { name: '꼬부기', type: 'water' }, { name: '어니부기', type: 'water' }, { name: '거북왕', type: 'water' },
+            { name: '고라파덕', type: 'water' }, { name: '발챙이', type: 'water' }, { name: '야도란', type: 'water' },
+            { name: '쥬쥬', type: 'water' }, { name: '셀러', type: 'water' }, { name: '별가사리', type: 'water' },
+            { name: '잉어킹', type: 'water' }, { name: '갸라도스', type: 'water' }, { name: '라프라스', type: 'water' },
+            { name: '샤미드', type: 'water' }, { name: '프리져', type: 'water' }, { name: '리아코', type: 'water' },
+            { name: '물짱이', type: 'water' }, { name: '팽도리', type: 'water' }, { name: '개구마르', type: 'water' },
+
+            // 풀 / 벌레 타입
+            { name: '이상해씨', type: 'grass' }, { name: '이상해풀', type: 'grass' }, { name: '이상해꽃', type: 'grass' },
+            { name: '캐터피', type: 'grass' }, { name: '단데기', type: 'grass' }, { name: '버터플', type: 'grass' },
+            { name: '뚜벅쵸', type: 'grass' }, { name: '모다피', type: 'grass' }, { name: '치코리타', type: 'grass' },
+            { name: '나무지기', type: 'grass' }, { name: '모부기', type: 'grass' }, { name: '나몰빼미', type: 'grass' },
+
+            // 페어리 / 핑크 귀여운 포켓몬
+            { name: '삐삐', type: 'fairy' }, { name: '픽시', type: 'fairy' }, { name: '푸린', type: 'fairy' },
+            { name: '푸크린', type: 'fairy' }, { name: '럭키', type: 'fairy' }, { name: '해피너스', type: 'fairy' },
+            { name: '토게피', type: 'fairy' }, { name: '마릴', type: 'fairy' }, { name: '님피아', type: 'fairy' },
+
+            // 에스퍼 / 고스트
+            { name: '캐이시', type: 'psychic' }, { name: '후딘', type: 'psychic' }, { name: '고오스', type: 'psychic' },
+            { name: '팬텀', type: 'psychic' }, { name: '뮤츠', type: 'psychic' }, { name: '뮤', type: 'psychic' },
+            { name: '마자용', type: 'psychic' }, { name: '루기아', type: 'psychic' }, { name: '세레비', type: 'psychic' },
+
+            // 노말 / 드래곤 등 인기 포켓몬
+            { name: '구구', type: 'normal' }, { name: '피죤투', type: 'normal' }, { name: '꼬렛', type: 'normal' },
+            { name: '나옹', type: 'normal' }, { name: '길동무', type: 'normal' }, { name: '잠만보', type: 'normal' },
+            { name: '이브이', type: 'normal' }, { name: '메타몽', type: 'normal' }, { name: '미뇽', type: 'dragon' },
+            { name: '신뇽', type: 'dragon' }, { name: '망나뇽', type: 'dragon' }, { name: '레쿠쟈', type: 'dragon' }
+        ];
+
+        /**
+         * =====================================================
+         * 2. 사운드 시스템 (Tone.js 기반 신디사이저 효과음)
+         * 외부 오디오 파일 없이도 경쾌한 8비트풍 게임 사운드 구현
+         * =====================================================
+         */
+        let soundEnabled = true;
+        let synth = null;
+
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.2 }
+                }).toDestination();
+                synth.volume.value = -6;
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !synth) return;
+            try {
+                const now = Tone.now();
+                if (type === 'catch') {
+                    // 포켓몬 잡았을 때 경쾌한 딩동!
+                    synth.triggerAttackRelease("C5", "16n", now);
+                    synth.triggerAttackRelease("E5", "16n", now + 0.07);
+                    synth.triggerAttackRelease("G5", "8n", now + 0.14);
+                } else if (type === 'miss') {
+                    // 바닥에 닿았을 때 낮은 경고음
+                    synth.triggerAttackRelease("G3", "16n", now);
+                    synth.triggerAttackRelease("C3", "8n", now + 0.1);
+                } else if (type === 'levelup') {
+                    // 레벨업 팡파레
+                    synth.triggerAttackRelease("C5", "16n", now);
+                    synth.triggerAttackRelease("E5", "16n", now + 0.08);
+                    synth.triggerAttackRelease("G5", "16n", now + 0.16);
+                    synth.triggerAttackRelease("C6", "4n", now + 0.24);
+                } else if (type === 'gameover') {
+                    // 게임오버 사운드
+                    synth.triggerAttackRelease("E4", "8n", now);
+                    synth.triggerAttackRelease("D4", "8n", now + 0.15);
+                    synth.triggerAttackRelease("C4", "4n", now + 0.3);
+                }
+            } catch (e) {
+                // 오디오 컨텍스트 에러 무시
+            }
+        }
+
+        /**
+         * =====================================================
+         * 3. 게임 상태 및 설정 변수
+         * =====================================================
+         */
+        const GAME_CONFIG = {
+            maxLives: 5,
+            levels: {
+                1: { minScore: 0,   speedMultiplier: 1.0, spawnInterval: 2300, label: 'Lv.1' },
+                2: { minScore: 50,  speedMultiplier: 1.3, spawnInterval: 1900, label: 'Lv.2' },
+                3: { minScore: 100, speedMultiplier: 1.6, spawnInterval: 1550, label: 'Lv.3' },
+                4: { minScore: 150, speedMultiplier: 2.0, spawnInterval: 1250, label: 'Lv.4 MAX' }
+            },
+            baseFallSpeed: 48 // 초당 내려오는 기본 픽셀 수 (초등학생 눈높이에 맞춰 천천히 시작)
+        };
+
+        // 공용 랭킹 API: GitHub JSON은 Cloudflare Worker를 통해서만 갱신합니다.
+        const LEADERBOARD_API_URL = "https://pkm-tjmaster-leaderboard.steven76.workers.dev";
+        const LOCAL_RANKINGS_KEY = "pkm-tjmaster-local-rankings-v1";
+        let leaderboardIsCloud = false;
+
+        let gameState = {
+            trainerName: '',
+            score: 0,
+            lives: GAME_CONFIG.maxLives,
+            level: 1,
+            isRunning: false,
+            activeWords: [], // { id, name, type, x, y, el, speedOffset }
+            lastFrameTime: 0,
+            lastSpawnTime: 0,
+            animationFrameId: null,
+            rankings: []
+        };
+
+        // DOM 요소 참조
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+
+        const trainerNameInput = document.getElementById('trainer-name-input');
+        const nameErrorMsg = document.getElementById('name-error-msg');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const startRankingList = document.getElementById('start-ranking-list');
+
+        const hudTrainerName = document.getElementById('hud-trainer-name');
+        const hudScore = document.getElementById('hud-score');
+        const hudLevel = document.getElementById('hud-level');
+        const hudLives = document.getElementById('hud-lives');
+        const soundToggleBtn = document.getElementById('sound-toggle-btn');
+        const soundIcon = document.getElementById('sound-icon');
+
+        const dropZone = document.getElementById('drop-zone');
+        const wordsContainer = document.getElementById('words-container');
+        const dangerLine = document.getElementById('danger-line');
+        const levelupBanner = document.getElementById('levelup-banner');
+        const levelupText = document.getElementById('levelup-text');
+
+        const typingForm = document.getElementById('typing-form');
+        const wordInput = document.getElementById('word-input');
+
+        const finalTrainerName = document.getElementById('final-trainer-name');
+        const finalScore = document.getElementById('final-score');
+        const finalPraise = document.getElementById('final-praise');
+        const gameoverRankingList = document.getElementById('gameover-ranking-list');
+        const retryBtn = document.getElementById('retry-btn');
+        const homeBtn = document.getElementById('home-btn');
+
+        /**
+         * =====================================================
+         * 4. UI 업데이트 및 헬퍼 함수
+         * =====================================================
+         */
+        // 몬스터볼 SVG 생성 함수 (생명력 아이콘)
+        function createPokeballSVG(isActive) {
+            if (isActive) {
+                return `
+                    <svg viewBox="0 0 100 100" class="w-6 h-6 sm:w-7 sm:h-7 transition-transform duration-300 scale-100">
+                        <circle cx="50" cy="50" r="45" fill="#fff" stroke="#222" stroke-width="8"/>
+                        <path d="M 5 50 A 45 45 0 0 1 95 50 Z" fill="#FF3B30" stroke="#222" stroke-width="8"/>
+                        <line x1="5" y1="50" x2="95" y2="50" stroke="#222" stroke-width="10"/>
+                        <circle cx="50" cy="50" r="15" fill="#fff" stroke="#222" stroke-width="8"/>
+                    </svg>
+                `;
+            } else {
+                return `
+                    <svg viewBox="0 0 100 100" class="w-6 h-6 sm:w-7 sm:h-7 opacity-30 grayscale transition-all duration-300 scale-90">
+                        <circle cx="50" cy="50" r="45" fill="#ccc" stroke="#555" stroke-width="8"/>
+                        <line x1="5" y1="50" x2="95" y2="50" stroke="#555" stroke-width="10"/>
+                        <circle cx="50" cy="50" r="15" fill="#ccc" stroke="#555" stroke-width="8"/>
+                    </svg>
+                `;
+            }
+        }
+
+        // HUD 업데이트 (점수, 레벨, 생명력)
+        function updateHUD() {
+            hudTrainerName.textContent = gameState.trainerName;
+            hudScore.textContent = gameState.score;
+            hudLevel.textContent = GAME_CONFIG.levels[gameState.level].label;
+
+            // 생명력 몬스터볼 5개 렌더링
+            let livesHTML = '';
+            for (let i = 0; i < GAME_CONFIG.maxLives; i++) {
+                livesHTML += createPokeballSVG(i < gameState.lives);
+            }
+            hudLives.innerHTML = livesHTML;
+        }
+
+        // 랭킹 리스트 렌더링 함수
+        function escapeRankingName(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[ch]);
+        }
+
+        function renderRankings() {
+            gameState.rankings.sort((a, b) => Number(b.score) - Number(a.score) ||
+                String(a.created_at || '').localeCompare(String(b.created_at || '')));
+            const top5 = gameState.rankings.slice(0, 5);
+            const top3 = gameState.rankings.slice(0, 3);
+            const medalIcons = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+
+            startRankingList.innerHTML = top3.map((r, idx) => `
+                <div class="flex justify-between items-center bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                    <span class="text-slate-700">${medalIcons[idx]} ${escapeRankingName(r.name)}</span>
+                    <span class="text-amber-600 font-bold">${Number(r.score) || 0}점</span>
+                </div>
+            `).join('');
+
+            gameoverRankingList.innerHTML = top5.map((r, idx) => {
+                const isCurrentPlayer = (r.name === gameState.trainerName && Number(r.score) === gameState.score);
+                const highlightClass = isCurrentPlayer ? 'bg-yellow-100 border-2 border-yellow-400' : 'bg-white border border-slate-200';
+                return `
+                    <div class="flex justify-between items-center px-4 py-2 rounded-xl ${highlightClass}">
+                        <span class="text-slate-800 flex items-center gap-2">
+                            <span>${medalIcons[idx]}</span>
+                            <span>${escapeRankingName(r.name)}</span>
+                            ${isCurrentPlayer ? '<span class="text-xs bg-yellow-400 text-yellow-950 px-2 py-0.5 rounded-full">내 기록!</span>' : ''}
+                        </span>
+                        <span class="text-amber-600 text-lg">${Number(r.score) || 0}점</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadLocalRankings() {
+            try {
+                const rows = JSON.parse(localStorage.getItem(LOCAL_RANKINGS_KEY) || '[]');
+                return Array.isArray(rows) ? rows.filter(r =>
+                    r && typeof r.name === 'string' && Number.isFinite(Number(r.score))
+                ).map(r => ({
+                    name: r.name.slice(0, 20),
+                    score: Math.max(0, Math.floor(Number(r.score))),
+                    created_at: r.created_at || ''
+                })) : [];
+            } catch (error) {
+                console.warn('로컬 랭킹을 읽을 수 없습니다.', error);
+                return [];
+            }
+        }
+
+        function saveLocalRanking(record) {
+            try {
+                const rows = loadLocalRankings();
+                rows.push(record);
+                rows.sort((a, b) => Number(b.score) - Number(a.score) ||
+                    String(a.created_at || '').localeCompare(String(b.created_at || '')));
+                localStorage.setItem(LOCAL_RANKINGS_KEY, JSON.stringify(rows.slice(0, 100)));
+            } catch (error) {
+                console.warn('로컬 랭킹을 저장할 수 없습니다.', error);
+            }
+        }
+
+        async function leaderboardRequest(method = 'GET', body) {
+            const response = await fetch(LEADERBOARD_API_URL.replace(/\\/$/, '') + '/scores', {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                ...(body ? { body: JSON.stringify(body) } : {})
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || ('랭킹 요청 실패 (' + response.status + ')'));
+            return data;
+        }
+
+        async function refreshRankings() {
+            try {
+                const data = await leaderboardRequest('GET');
+                gameState.rankings = Array.isArray(data.scores) ? data.scores.map(r => ({
+                    name: String(r.name || '트레이너').slice(0, 20),
+                    score: Math.max(0, Math.floor(Number(r.score) || 0)),
+                    created_at: r.created_at || ''
+                })) : [];
+                leaderboardIsCloud = true;
+            } catch (error) {
+                console.warn('공용 랭킹 연결 실패. 로컬 랭킹을 표시합니다.', error);
+                gameState.rankings = loadLocalRankings();
+                leaderboardIsCloud = false;
+            }
+            renderRankings();
+        }
+
+        async function saveFinalScore() {
+            const record = {
+                name: gameState.trainerName,
+                score: gameState.score,
+                created_at: new Date().toISOString()
+            };
+            saveLocalRanking(record);
+            try {
+                await leaderboardRequest('POST', { name: record.name, score: record.score });
+                await refreshRankings();
+                return true;
+            } catch (error) {
+                console.warn('공용 점수 저장 실패. 이 기기에만 저장했습니다.', error);
+                leaderboardIsCloud = false;
+                gameState.rankings = loadLocalRankings();
+                renderRankings();
+                return false;
+            }
+        }
+
+        /**
+         * =====================================================
+         * 5. 핵심 게임 로직 (단어 생성, 낙하, 충돌, 레벨업)
+         * =====================================================
+         */
+        // 누적 점수에 따른 레벨 체크 (50점, 100점, 150점 기준)
+        function checkLevelUp() {
+            let newLevel = 1;
+            if (gameState.score >= 150) {
+                newLevel = 4;
+            } else if (gameState.score >= 100) {
+                newLevel = 3;
+            } else if (gameState.score >= 50) {
+                newLevel = 2;
+            }
+
+            if (newLevel > gameState.level) {
+                gameState.level = newLevel;
+                playSound('levelup');
+                showLevelUpBanner(newLevel);
+                updateHUD();
+            }
+        }
+
+        function showLevelUpBanner(level) {
+            levelupText.textContent = `레벨 ${level} 달성! 속도가 조금 빨라져요!`;
+            levelupBanner.classList.remove('hidden');
+            setTimeout(() => {
+                levelupBanner.classList.add('hidden');
+            }, 2200);
+        }
+
+        // 새로운 포켓몬 단어 생성
+        function spawnPokemonWord() {
+            // 현재 화면에 이미 나와있는 단어는 중복 생성 방지
+            const activeNames = new Set(gameState.activeWords.map(w => w.name));
+            const availableList = POKEMON_LIST.filter(p => !activeNames.has(p.name));
+            const pool = availableList.length > 0 ? availableList : POKEMON_LIST;
+
+            const randomPoke = pool[Math.floor(Math.random() * pool.length)];
+            const style = POKEMON_TYPES[randomPoke.type] || POKEMON_TYPES.normal;
+
+            // 가로 위치(X)를 12% ~ 85% 사이에서 안전하게 생성 (화면 밖 잘림 방지)
+            const randomXPercent = 12 + Math.random() * 73;
+
+            const wordEl = document.createElement('div');
+            wordEl.className = `absolute -translate-x-1/2 px-4 py-2 rounded-full border-4 shadow-lg flex items-center gap-1.5 whitespace-nowrap transition-transform ${style.bg} ${style.border} ${style.text}`;
+            wordEl.style.left = `${randomXPercent}%`;
+            wordEl.style.top = `-50px`;
+            wordEl.innerHTML = `
+                <span class="text-lg sm:text-xl">${style.icon}</span>
+                <span class="text-xl sm:text-2xl tracking-wide">${randomPoke.name}</span>
+            `;
+
+            wordsContainer.appendChild(wordEl);
+
+            gameState.activeWords.push({
+                id: Date.now() + Math.random(),
+                name: randomPoke.name,
+                xPercent: randomXPercent,
+                y: -50,
+                el: wordEl,
+                // 단어마다 미세한 속도 차이(0.9~1.1배)를 줘서 자연스럽게 연출
+                speedVariation: 0.92 + Math.random() * 0.16
+            });
+        }
+
+        // 메인 게임 애니메이션 루프
+        function gameLoop(timestamp) {
+            if (!gameState.isRunning) return;
+
+            if (!gameState.lastFrameTime) gameState.lastFrameTime = timestamp;
+            const deltaTime = (timestamp - gameState.lastFrameTime) / 1000; // 초 단위 경과 시간
+            gameState.lastFrameTime = timestamp;
+
+            const currentLevelConfig = GAME_CONFIG.levels[gameState.level];
+
+            // 1. 일정 주기마다 새 포켓몬 단어 생성
+            if (timestamp - gameState.lastSpawnTime > currentLevelConfig.spawnInterval) {
+                spawnPokemonWord();
+                gameState.lastSpawnTime = timestamp;
+            }
+
+            // 위험선(바닥) Y 좌표 계산
+            const dropZoneHeight = dropZone.clientHeight;
+            const dangerY = dropZoneHeight - 36; // 바닥 위험 구역 높이
+
+            // 2. 단어 위치 이동 및 바닥 충돌 체크
+            const currentSpeed = GAME_CONFIG.baseFallSpeed * currentLevelConfig.speedMultiplier;
+
+            for (let i = gameState.activeWords.length - 1; i >= 0; i--) {
+                const wordObj = gameState.activeWords[i];
+                wordObj.y += currentSpeed * wordObj.speedVariation * deltaTime;
+                wordObj.el.style.top = `${wordObj.y}px`;
+
+                // 바닥에 닿았는지 검사
+                if (wordObj.y + 42 >= dangerY) {
+                    handleWordMissed(i);
+                }
+            }
+
+            if (gameState.isRunning) {
+                gameState.animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // 단어가 바닥에 닿았을 때 처리 (생명력 감소)
+        function handleWordMissed(index) {
+            const wordObj = gameState.activeWords[index];
+            if (wordObj && wordObj.el) {
+                wordObj.el.remove();
+            }
+            gameState.activeWords.splice(index, 1);
+
+            gameState.lives -= 1;
+            playSound('miss');
+            updateHUD();
+
+            // 화면 흔들림 및 붉은 깜빡임 피드백
+            gameScreen.classList.remove('shake-effect');
+            void gameScreen.offsetWidth; // 리플로우 강제
+            gameScreen.classList.add('shake-effect');
+
+            // 생명력을 모두 소진하면 게임 오버
+            if (gameState.lives <= 0) {
+                endGame();
+            }
+        }
+
+        // 사용자가 단어를 입력해 제출했을 때 정답 판정
+        function checkAnswer(inputText) {
+            const trimmed = inputText.trim();
+            if (!trimmed) return;
+
+            // 화면에 있는 단어 중 일치하는 단어 찾기 (여러 개일 경우 바닥에 가장 가까운 단어 우선)
+            let matchedIndex = -1;
+            let maxY = -9999;
+
+            gameState.activeWords.forEach((wordObj, idx) => {
+                if (wordObj.name === trimmed && wordObj.y > maxY) {
+                    maxY = wordObj.y;
+                    matchedIndex = idx;
+                }
+            });
+
+            if (matchedIndex !== -1) {
+                // 정답 맞춤!
+                const matchedWord = gameState.activeWords[matchedIndex];
+                gameState.activeWords.splice(matchedIndex, 1);
+
+                // +1점 획득 및 레벨업 체크
+                gameState.score += 1;
+                playSound('catch');
+                checkLevelUp();
+                updateHUD();
+
+                // 캡슐이 반짝이며 사라지는 연출 + "+1점" 텍스트 표시
+                const el = matchedWord.el;
+                el.innerHTML = `<span class="text-2xl text-yellow-600 font-bold">✨ 찰칵! +1점 ✨</span>`;
+                el.className = `absolute -translate-x-1/2 px-4 py-2 rounded-full bg-white border-4 border-yellow-400 shadow-xl pop-animation`;
+                setTimeout(() => {
+                    if (el.parentNode) el.remove();
+                }, 350);
+            } else {
+                // 오답일 때 입력창 살짝 흔들림
+                wordInput.classList.remove('shake-effect');
+                void wordInput.offsetWidth;
+                wordInput.classList.add('shake-effect');
+            }
+        }
+
+        /**
+         * =====================================================
+         * 6. 게임 시작 및 종료 제어
+         * =====================================================
+         */
+        function startGame() {
+            const nameVal = trainerNameInput.value.trim();
+            if (!nameVal) {
+                nameErrorMsg.classList.remove('hidden');
+                trainerNameInput.focus();
+                return;
+            }
+            nameErrorMsg.classList.add('hidden');
+
+            // 오디오 컨텍스트 활성화 (사용자 인터랙션 시점)
+            initAudio();
+            if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
+                Tone.start();
+            }
+
+            // 상태 초기화
+            gameState.trainerName = nameVal;
+            gameState.score = 0;
+            gameState.lives = GAME_CONFIG.maxLives;
+            gameState.level = 1;
+            gameState.isRunning = true;
+            gameState.activeWords = [];
+            gameState.lastFrameTime = 0;
+            gameState.lastSpawnTime = performance.now();
+
+            wordsContainer.innerHTML = '';
+            levelupBanner.classList.add('hidden');
+            updateHUD();
+
+            // 화면 전환
+            startScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            // 입력창 초기화 및 자동 포커스
+            wordInput.value = '';
+            setTimeout(() => {
+                wordInput.focus();
+            }, 50);
+
+            // 첫 번째 포켓몬 즉시 등장 후 루프 시작
+            spawnPokemonWord();
+            if (gameState.animationFrameId) cancelAnimationFrame(gameState.animationFrameId);
+            gameState.animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState.isRunning = false;
+            if (gameState.animationFrameId) {
+                cancelAnimationFrame(gameState.animationFrameId);
+            }
+
+            playSound('gameover');
+
+            // 최종 점수를 로컬 백업하고 공용 랭킹(JSON) 저장을 시도합니다.
+            const finalScoreForSave = gameState.score;
+            saveFinalScore();
+
+            // 최종 점수 및 칭찬 메시지 설정
+            finalTrainerName.textContent = gameState.trainerName;
+            finalScore.textContent = gameState.score;
+
+            if (gameState.score >= 150) {
+                finalPraise.textContent = "👑 전설의 포켓몬 마스터 등극! 정말 최고예요!";
+            } else if (gameState.score >= 100) {
+                finalPraise.textContent = "🌟 우와! 체육관 관장님 실력인데요?!";
+            } else if (gameState.score >= 50) {
+                finalPraise.textContent = "⚡ 대단해요! 타자 속도가 점점 빨라지고 있어요!";
+            } else {
+                finalPraise.textContent = "🌱 멋진 도전이었어요! 한 번 더 해볼까요?";
+            }
+
+            // 게임오버 모달 표시
+            gameoverScreen.classList.remove('hidden');
+        }
+
+        /**
+         * =====================================================
+         * 7. 이벤트 리스너 등록 (한글 조합 버그 방지 포함)
+         * =====================================================
+         */
+        // 시작 버튼 클릭 및 이름 입력창 엔터
+        startGameBtn.addEventListener('click', startGame);
+        trainerNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                startGame();
+            } else {
+                nameErrorMsg.classList.add('hidden');
+            }
+        });
+
+        // 게임 중 단어 제출 (Form Submit)
+        typingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!gameState.isRunning) return;
+
+            const currentVal = wordInput.value;
+            checkAnswer(currentVal);
+
+            // 한글 IME 조합 중 엔터를 쳤을 때 마지막 글자가 남는 현상을 방지하기 위해 즉시 비움 처리
+            wordInput.value = '';
+            setTimeout(() => {
+                wordInput.value = '';
+                wordInput.focus();
+            }, 0);
+        });
+
+        // 게임 화면 어디를 클릭하든 항상 입력창에 포커스 유지
+        gameScreen.addEventListener('click', (e) => {
+            if (e.target.closest('#sound-toggle-btn')) return;
+            wordInput.focus();
+        });
+
+        // 소리 켜기/끄기 토글
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundIcon.className = 'fa-solid fa-volume-high';
+                soundToggleBtn.classList.replace('text-slate-400', 'text-slate-700');
+            } else {
+                soundIcon.className = 'fa-solid fa-volume-xmark';
+                soundToggleBtn.classList.replace('text-slate-700', 'text-slate-400');
+            }
+            wordInput.focus();
+        });
+
+        // 다시 도전하기 (같은 이름으로 바로 시작)
+        retryBtn.addEventListener('click', () => {
+            startGame();
+        });
+
+        // 처음으로 돌아가기 (이름 변경 가능)
+        homeBtn.addEventListener('click', () => {
+            gameoverScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            renderRankings();
+            setTimeout(() => trainerNameInput.focus(), 50);
+        });
+
+        // 초기 화면 로드 시 공용 랭킹을 불러옵니다. 연결 실패 시 로컬 기록을 표시합니다.
+        window.addEventListener('load', () => {
+            refreshRankings();
+        });
+    </script>
+</body>
+</html>
