@@ -566,7 +566,7 @@
         }
 
         async function leaderboardRequest(method = 'GET', body) {
-            const response = await fetch(LEADERBOARD_API_URL.replace(/\\/$/, '') + '/scores', {
+            const response = await fetch(LEADERBOARD_API_URL.replace(/\/$/, '') + '/scores', {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 ...(body ? { body: JSON.stringify(body) } : {})
@@ -844,7 +844,6 @@
             playSound('gameover');
 
             // 최종 점수를 로컬 백업하고 공용 랭킹(JSON) 저장을 시도합니다.
-            const finalScoreForSave = gameState.score;
             saveFinalScore();
 
             // 최종 점수 및 칭찬 메시지 설정
