@@ -1,0 +1,11 @@
+name = "pkm-tjmaster-leaderboard"
+main = "worker.js"
+compatibility_date = "2026-10-29"
+
+[vars]
+GITHUB_OWNER = "MaRaJoa777"
+GITHUB_REPO = "pkm-tjmaster"
+GITHUB_BRANCH = "main"
+# Set ALLOWED_ORIGIN to your exact deployed game origin after deployment.
+# Example: "https://marajoa777.github.io"
+ALLOWED_ORIGIN = "*"
